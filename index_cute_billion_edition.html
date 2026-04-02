@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cute billion edition</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+
+    :root{
+      --bg-1:#120016;
+      --bg-2:#240028;
+      --bg-3:#3a0938;
+      --pink-1:#ff5fa8;
+      --pink-2:#ff8fc4;
+      --pink-3:#ffd0e8;
+      --gold-1:#ffd978;
+      --gold-2:#fff0c3;
+      --white:rgba(255,255,255,.95);
+      --soft:rgba(255,255,255,.78);
+    }
+
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      font-family:'Inter',system-ui,sans-serif;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,95,168,.22), transparent 22%),
+        radial-gradient(circle at 82% 20%, rgba(255,217,120,.12), transparent 18%),
+        radial-gradient(circle at 50% 86%, rgba(255,143,196,.18), transparent 24%),
+        linear-gradient(180deg,var(--bg-1),var(--bg-2) 52%,var(--bg-3));
+      color:#fff;
+    }
+
+    canvas,
+    .aurora,
+    .noise{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .noise{
+      opacity:.04;
+      background-image:
+        radial-gradient(circle at 20% 20%, #fff 0 1px, transparent 1.2px),
+        radial-gradient(circle at 80% 50%, #fff 0 1px, transparent 1.2px),
+        radial-gradient(circle at 35% 75%, #fff 0 1px, transparent 1.2px),
+        radial-gradient(circle at 65% 30%, #fff 0 1px, transparent 1.2px);
+      background-size:180px 180px;
+      mix-blend-mode:screen;
+    }
+
+    .aurora::before,
+    .aurora::after{
+      content:"";
+      position:absolute;
+      width:42vw;
+      height:42vw;
+      border-radius:50%;
+      filter:blur(70px);
+      opacity:.24;
+      animation: drift 12s ease-in-out infinite;
+    }
+
+    .aurora::before{
+      left:-10vw;
+      top:8vh;
+      background:radial-gradient(circle, rgba(255,95,168,.60), transparent 65%);
+    }
+
+    .aurora::after{
+      right:-8vw;
+      bottom:-6vh;
+      background:radial-gradient(circle, rgba(255,240,195,.28), transparent 65%);
+      animation-delay:-6s;
+    }
+
+    #intro{
+      position:fixed;
+      inset:0;
+      z-index:30;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(180deg, rgba(8,0,10,.96), rgba(24,0,28,.94));
+      transition:opacity 1s ease, visibility 1s ease;
+      backdrop-filter:blur(10px);
+    }
+
+    #intro.hide{
+      opacity:0;
+      visibility:hidden;
+    }
+
+    .intro-shell{
+      width:min(92vw, 860px);
+      padding:38px 28px;
+      border-radius:34px;
+      text-align:center;
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:
+        0 28px 100px rgba(0,0,0,.40),
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 0 50px rgba(255,95,168,.08);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .intro-shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius:inherit;
+      background:linear-gradient(120deg, rgba(255,255,255,.06), rgba(255,217,120,.30), rgba(255,143,196,.26), rgba(255,255,255,.05));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events:none;
+    }
+
+    .intro-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 16px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      color:#fff7f9;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      margin-bottom:18px;
+    }
+
+    .intro-text{
+      min-height:3em;
+      font-family:'Playfair Display',serif;
+      font-size:clamp(30px,5vw,52px);
+      line-height:1.25;
+      color:#fff3fb;
+      opacity:0;
+      transform:translateY(12px) scale(.98);
+      transition:all .85s ease;
+      text-shadow:0 0 22px rgba(255,190,225,.18);
+    }
+
+    .intro-text.show{
+      opacity:1;
+      transform:translateY(0) scale(1);
+    }
+
+    .intro-dots{
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      margin-top:18px;
+    }
+
+    .intro-dots span{
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:rgba(255,255,255,.18);
+      transition:.35s ease;
+    }
+
+    .intro-dots span.active{
+      width:30px;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--pink-2), var(--gold-2));
+      box-shadow:0 0 18px rgba(255,217,120,.22);
+    }
+
+    .scene{
+      position:relative;
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      z-index:3;
+      cursor:pointer;
+      isolation:isolate;
+    }
+
+    .shell{
+      position:relative;
+      width:min(94vw, 660px);
+      border-radius:38px;
+      padding:32px 28px 36px;
+      background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:
+        0 32px 110px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 0 90px rgba(255,95,168,.10);
+      backdrop-filter:blur(24px);
+      overflow:visible;
+    }
+
+    .shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius:inherit;
+      background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,217,120,.34), rgba(255,143,196,.28), rgba(255,255,255,.06));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events:none;
+    }
+
+    .shell::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      background:linear-gradient(120deg, transparent 10%, rgba(255,255,255,.09) 24%, transparent 38%);
+      transform:translateX(-130%);
+      animation: cardShine 7s linear infinite;
+      pointer-events:none;
+      opacity:.8;
+    }
+
+    .topline{
+      display:flex;
+      justify-content:center;
+      margin-bottom:18px;
+      position:relative;
+      z-index:2;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:11px 18px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      color:#fffaf2;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.4px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .halo{
+      position:absolute;
+      left:50%;
+      top:84px;
+      transform:translateX(-50%);
+      width:330px;
+      height:330px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(255,105,176,.28), rgba(255,105,176,.04) 58%, transparent 72%);
+      filter:blur(18px);
+      animation:pulse 2.8s ease-in-out infinite;
+    }
+
+    .pedestal{
+      position:absolute;
+      left:50%;
+      top:312px;
+      transform:translateX(-50%);
+      width:230px;
+      height:58px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(255,230,170,.24), rgba(255,230,170,.02) 62%, transparent 76%);
+      filter:blur(16px);
+      opacity:.9;
+    }
+
+    .heart-wrap{
+      position:relative;
+      width:190px;
+      height:190px;
+      margin:8px auto 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:2;
+    }
+
+    .ring{
+      position:absolute;
+      inset:-20px;
+      border-radius:50%;
+      background:conic-gradient(from 0deg, rgba(255,255,255,0), rgba(255,217,120,.34), rgba(255,255,255,0), rgba(255,95,168,.28), rgba(255,255,255,0));
+      filter:blur(10px);
+      animation:spin 14s linear infinite;
+    }
+
+    .outer-ring{
+      position:absolute;
+      inset:-34px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 0 26px rgba(255,217,120,.08);
+      animation:spinReverse 18s linear infinite;
+      opacity:.9;
+    }
+
+    .heart{
+      position:relative;
+      width:132px;
+      height:132px;
+      border-radius:28px;
+      background:linear-gradient(145deg, #ff4f98, #ffc6e3);
+      transform:rotate(-45deg);
+      box-shadow:
+        0 0 34px rgba(255,95,168,.42),
+        0 0 100px rgba(255,95,168,.18),
+        inset 0 0 18px rgba(255,255,255,.16);
+      animation:beat 1.14s ease-in-out infinite;
+      overflow:hidden;
+    }
+
+    .heart::before,
+    .heart::after{
+      content:"";
+      position:absolute;
+      width:132px;
+      height:132px;
+      background:inherit;
+      border-radius:50%;
+    }
+
+    .heart::before{ top:-66px; left:0; }
+    .heart::after{ top:0; left:66px; }
+
+    .shine{
+      position:absolute;
+      width:84px;
+      height:28px;
+      top:30px;
+      left:12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.26);
+      transform:rotate(24deg);
+      filter:blur(6px);
+      z-index:3;
+    }
+
+    .mini-crown{
+      position:absolute;
+      top:-22px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:28px;
+      filter:drop-shadow(0 0 10px rgba(255,217,120,.30));
+      z-index:4;
+    }
+
+    .title{
+      margin:50px 0 12px;
+      text-align:center;
+      font-family:'Pacifico', cursive;
+      font-size:clamp(40px,7vw,72px);
+      line-height:1.16;
+      background:linear-gradient(90deg, #ff9dcc 0%, #fff0c3 46%, #ff9dcc 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      text-shadow:0 0 16px rgba(255,155,205,.20), 0 0 34px rgba(255,217,120,.12);
+      opacity:0;
+      transform:translateY(18px) scale(.94);
+      transition:.65s ease;
+      position:relative;
+      z-index:2;
+      padding:0 8px;
+    }
+
+    .title.show{
+      opacity:1;
+      transform:translateY(0) scale(1);
+      animation:glow 2.2s ease-in-out infinite;
+    }
+
+    .headline{
+      margin:2px auto 8px;
+      max-width:450px;
+      text-align:center;
+      font-size:26px;
+      line-height:1.45;
+      font-weight:800;
+      color:var(--white);
+      position:relative;
+      z-index:2;
+    }
+
+    .sub{
+      margin:0 auto 24px;
+      max-width:420px;
+      text-align:center;
+      font-size:14px;
+      line-height:1.8;
+      color:var(--soft);
+      position:relative;
+      z-index:2;
+    }
+
+    .button{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:17px 26px;
+      border-radius:999px;
+      border:1px solid rgba(255,220,140,.28);
+      background:linear-gradient(135deg, rgba(255,255,255,.11), rgba(255,255,255,.04));
+      color:#fff;
+      font-size:16px;
+      font-weight:800;
+      box-shadow:
+        0 20px 42px rgba(0,0,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.15),
+        0 0 26px rgba(255,220,140,.08);
+      backdrop-filter:blur(16px);
+      transition:.25s ease;
+      z-index:2;
+    }
+
+    .button.hide{
+      opacity:.18;
+      transform:scale(.96);
+    }
+
+    .button:hover{
+      transform:translateY(-2px);
+      box-shadow:
+        0 24px 50px rgba(0,0,0,.22),
+        inset 0 1px 0 rgba(255,255,255,.15),
+        0 0 30px rgba(255,220,140,.10);
+    }
+
+    .button .icon{
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg, #ff6aa9, #ffd978);
+      box-shadow:0 0 14px rgba(255,220,140,.16);
+      font-size:14px;
+      color:#180b10;
+      flex-shrink:0;
+    }
+
+    .line{
+      width:138px;
+      height:4px;
+      border-radius:999px;
+      margin:18px auto 0;
+      background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,236,176,.95), rgba(255,255,255,0));
+      box-shadow:0 0 18px rgba(255,230,170,.24);
+      position:relative;
+      z-index:2;
+    }
+
+    .card-stars span{
+      position:absolute;
+      width:5px;
+      height:5px;
+      border-radius:50%;
+      background:rgba(255,255,255,.80);
+      box-shadow:0 0 12px rgba(255,255,255,.42);
+      animation:twinkle 2.8s ease-in-out infinite;
+      z-index:1;
+      pointer-events:none;
+    }
+
+    .slow{
+      position:absolute;
+      opacity:.18;
+      animation:floaty 7s ease-in-out infinite;
+      z-index:1;
+    }
+
+    .boom-heart,.cat,.spark{
+      position:absolute;
+      pointer-events:none;
+    }
+
+    .boom-heart{
+      z-index:6;
+      text-shadow:0 0 16px rgba(255,120,190,.9);
+    }
+
+    .cat{
+      z-index:7;
+      filter:drop-shadow(0 0 10px rgba(255,255,255,.30));
+      animation:catFly 1.2s ease-out forwards;
+    }
+
+    .spark{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(255,255,255,1), rgba(255,220,165,.95) 55%, rgba(255,220,165,0) 75%);
+      z-index:5;
+      animation:sparkFly 900ms ease-out forwards;
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:translateX(-50%) scale(.95);opacity:.74;}
+      50%{transform:translateX(-50%) scale(1.08);opacity:1;}
+    }
+
+    @keyframes beat{
+      0%,100%{transform:rotate(-45deg) scale(1);}
+      15%{transform:rotate(-45deg) scale(1.08);}
+      30%{transform:rotate(-45deg) scale(.98);}
+      45%{transform:rotate(-45deg) scale(1.13);}
+      60%{transform:rotate(-45deg) scale(1);}
+    }
+
+    @keyframes glow{
+      0%,100%{filter:brightness(1);}
+      50%{filter:brightness(1.35);}
+    }
+
+    @keyframes drift{
+      0%,100%{transform:translateY(0) translateX(0);}
+      50%{transform:translateY(-18px) translateX(10px);}
+    }
+
+    @keyframes cardShine{
+      0%{transform:translateX(-130%);}
+      100%{transform:translateX(130%);}
+    }
+
+    @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    @keyframes spinReverse{from{transform:rotate(360deg)}to{transform:rotate(0)}}
+
+    @keyframes twinkle{
+      0%,100%{opacity:.20;transform:scale(.9)}
+      50%{opacity:1;transform:scale(1.4)}
+    }
+
+    @keyframes floaty{
+      0%,100%{transform:translateY(0);opacity:.12}
+      50%{transform:translateY(-12px);opacity:.28}
+    }
+
+    @keyframes catFly{
+      0%{transform:translate(0,0) scale(.82) rotate(0);opacity:1}
+      100%{transform:translate(var(--dx),var(--dy)) scale(1.6) rotate(var(--rot));opacity:0}
+    }
+
+    @keyframes sparkFly{
+      0%{transform:translate(0,0) scale(1);opacity:1}
+      100%{transform:translate(var(--sx),var(--sy)) scale(.15);opacity:0}
+    }
+
+    @media (max-width:600px){
+      .shell{padding:26px 18px 30px;}
+      .headline{font-size:22px;}
+      .button{font-size:15px;padding:15px 22px;}
+      .intro-shell{padding:28px 18px;}
+      .title{font-size:clamp(34px,9vw,56px);}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="noise"></div>
+  <div class="aurora"></div>
+
+  <div id="intro">
+    <div class="intro-shell">
+      <div class="intro-badge">cute billion edition</div>
+      <div class="intro-text" id="introText"></div>
+      <div class="intro-dots" id="introDots">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="shell">
+      <div class="card-stars">
+        <span style="left:13%;top:13%;animation-delay:0s;"></span>
+        <span style="left:84%;top:16%;animation-delay:.7s;"></span>
+        <span style="left:14%;top:75%;animation-delay:1.1s;"></span>
+        <span style="left:88%;top:73%;animation-delay:1.8s;"></span>
+        <span style="left:22%;top:39%;animation-delay:1.4s;"></span>
+        <span style="left:75%;top:37%;animation-delay:.9s;"></span>
+      </div>
+
+      <div class="slow" style="left:10%;top:58%;">✦</div>
+      <div class="slow" style="right:12%;top:56%;animation-delay:1.2s;">✧</div>
+
+      <div class="topline">
+        <div class="badge">👑 cute luxury billion 👑</div>
+      </div>
+
+      <div class="halo"></div>
+      <div class="pedestal"></div>
+
+      <div class="heart-wrap">
+        <div class="outer-ring"></div>
+        <div class="ring"></div>
+        <div class="mini-crown">👑</div>
+        <div class="heart"><div class="shine"></div></div>
+      </div>
+
+      <div class="title" id="title">em là phiên bản đắt giá nhất của sự dễ thương ✨</div>
+      <div class="headline">không chỉ đẹp, mà còn khiến mọi thứ xung quanh tự nhiên trở nên xa xỉ hơn</div>
+      <div class="sub">vừa ngọt, vừa sang, vừa mềm đến mức người ta không còn muốn gọi đây là dễ thương nữa, mà là một thứ hiếm có chỉ cần nhìn thôi cũng đủ thấy đắt</div>
+
+      <div class="topline" style="margin-top:4px;">
+        <div class="button" id="hint"><span class="icon">❤</span><span>chạm vào đây đi</span></div>
+      </div>
+
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <audio id="meowSound" preload="auto">
+    <source src="meow.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="bgMusic" preload="auto" loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const title = document.getElementById('title');
+    const hint = document.getElementById('hint');
+    const meowSound = document.getElementById('meowSound');
+    const bgMusic = document.getElementById('bgMusic');
+    const intro = document.getElementById('intro');
+    const introText = document.getElementById('introText');
+    const introDots = document.querySelectorAll('#introDots span');
+
+    const introLines = [
+      'không phải kiểu cute bình thường...',
+      'mà là kiểu càng nhìn càng muốn giữ...',
+      'kiểu vừa sang vừa mềm...',
+      'kiểu nếu định giá thì phải là bản không có đối thủ...',
+      'và tất cả độ đắt giá đó đều nằm ở em 💖'
+    ];
+
+    function random(min,max){ return Math.random()*(max-min)+min; }
+
+    function setDot(i){
+      introDots.forEach((d,idx)=>d.classList.toggle('active', idx===i));
+    }
+
+    async function runIntro(){
+      for(let i=0;i<introLines.length;i++){
+        setDot(i);
+        introText.classList.remove('show');
+        await new Promise(r=>setTimeout(r,350));
+        introText.textContent = introLines[i];
+        introText.classList.add('show');
+        await new Promise(r=>setTimeout(r,1750));
+      }
+      intro.classList.add('hide');
+      setTimeout(()=> intro.style.display='none', 1000);
+    }
+
+    function startMusic(){
+      if(!bgMusic) return;
+      bgMusic.volume = 0.32;
+      bgMusic.play().catch(()=>{});
+    }
+
+    function playMeow(){
+      if(!meowSound) return;
+      meowSound.volume = 0.88;
+      meowSound.currentTime = 0;
+      meowSound.play().catch(()=>{});
+    }
+
+    function createExplosion(x,y){
+      for(let i=0;i<34;i++){
+        const heart = document.createElement('div');
+        heart.className = 'boom-heart';
+        heart.innerHTML = '❤';
+        heart.style.left = x+'px';
+        heart.style.top = y+'px';
+        heart.style.color = Math.random()>.5 ? '#ff8fc4' : '#fff0c3';
+        heart.style.fontSize = random(16,46)+'px';
+
+        const angle = Math.random()*Math.PI*2;
+        const distance = random(100,240);
+        const dx = Math.cos(angle)*distance;
+        const dy = Math.sin(angle)*distance;
+
+        heart.animate(
+          [
+            {transform:'translate(0,0) scale(.8)', opacity:1},
+            {transform:`translate(${dx}px, ${dy}px) scale(1.75)`, opacity:0}
+          ],
+          {duration:980, easing:'ease-out'}
+        );
+
+        scene.appendChild(heart);
+        setTimeout(()=>heart.remove(),980);
+      }
+    }
+
+    function createCats(x,y){
+      const cats = ['🐱','😺','😸','😻','🐈'];
+      for(let i=0;i<12;i++){
+        const cat = document.createElement('div');
+        cat.className='cat';
+        cat.innerHTML = cats[Math.floor(Math.random()*cats.length)];
+        cat.style.left = x+'px';
+        cat.style.top = y+'px';
+        cat.style.fontSize = random(24,42)+'px';
+        cat.style.setProperty('--dx', random(-190,190)+'px');
+        cat.style.setProperty('--dy', random(-190,190)+'px');
+        cat.style.setProperty('--rot', random(-240,240)+'deg');
+        scene.appendChild(cat);
+        setTimeout(()=>cat.remove(),1200);
+      }
+    }
+
+    function createSparks(x,y){
+      for(let i=0;i<22;i++){
+        const s = document.createElement('div');
+        s.className='spark';
+        s.style.left = x+'px';
+        s.style.top = y+'px';
+        s.style.setProperty('--sx', random(-150,150)+'px');
+        s.style.setProperty('--sy', random(-150,150)+'px');
+        scene.appendChild(s);
+        setTimeout(()=>s.remove(),900);
+      }
+    }
+
+    document.addEventListener('click', ()=> startMusic(), {once:true});
+
+    scene.addEventListener('click', (e)=>{
+      title.classList.add('show');
+      hint.classList.add('hide');
+      startMusic();
+      playMeow();
+      createExplosion(e.clientX, e.clientY);
+      createCats(e.clientX, e.clientY);
+      createSparks(e.clientX, e.clientY);
+    });
+
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize(){
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+      particles = Array.from({length: Math.min(38, Math.floor(innerWidth/42))}, () => ({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        r: Math.random()*1.9 + .6,
+        a: Math.random()*.42 + .1,
+        vx: (Math.random()-.5)*.11,
+        vy: (Math.random()-.5)*.11
+      }));
+    }
+
+    function tick(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(const p of particles){
+        p.x += p.vx; p.y += p.vy;
+        if(p.x<0) p.x=canvas.width;
+        if(p.x>canvas.width) p.x=0;
+        if(p.y<0) p.y=canvas.height;
+        if(p.y>canvas.height) p.y=0;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,220,140,${p.a})`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255,220,140,.22)';
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    addEventListener('resize', resize);
+    resize();
+    tick();
+
+    runIntro();
+  </script>
+</body>
+</html>
